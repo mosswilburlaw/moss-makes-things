@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Moss Makes Things — TikTok OAuth callback</title>
+<style>
+body{max-width:720px;margin:2rem auto;padding:0 1rem;font:16px/1.6 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;color:#222}
+.card{border:1px solid #ddd;border-radius:18px;padding:24px;box-shadow:0 8px 30px rgba(0,0,0,.06)}
+code{background:#f5f5f5;padding:2px 5px;border-radius:5px;word-break:break-all}
+a.button{display:inline-block;padding:12px 18px;border-radius:999px;background:#111;color:#fff;text-decoration:none;font-weight:700;margin-top:8px}
+.muted{color:#666;font-size:13px}
+.row{margin:14px 0}
+.copy{display:inline-block;margin-left:8px;font-size:13px;cursor:pointer;border:1px solid #ddd;border-radius:6px;padding:2px 8px;background:#fafafa}
+.err{color:#a00}
+</style>
+</head>
+<body>
+<div class="card">
+<h1>TikTok OAuth callback</h1>
+<p id="status" class="muted">Reading authorization code…</p>
+
+<div id="ok" style="display:none">
+<p>TikTok returned an authorization code. Forwarding to the local sandbox demo running on <code>localhost:8443</code>.</p>
+<p><a id="forward" class="button" href="#">Continue to local demo</a></p>
+<p class="muted">If the local server tab does not auto-open, click the button above. You may need to accept a self-signed certificate warning the first time.</p>
+<div class="row">
+<strong>Code:</strong> <code id="code"></code> <span class="copy" data-copy="code">copy</span>
+</div>
+<div class="row">
+<strong>State:</strong> <code id="state"></code>
+</div>
+<div class="row" id="scopes-row" style="display:none">
+<strong>Scopes:</strong> <code id="scopes"></code>
+</div>
+</div>
+
+<div id="err" style="display:none">
+<p class="err"><strong>OAuth error:</strong> <code id="err-code"></code></p>
+<p id="err-desc" class="muted"></p>
+<p class="muted">Return to the local terminal running <code>demo.py</code>.</p>
+</div>
+
+<p class="muted" style="margin-top:24px">Public callback target for App ID 7636795397154998293 (sandbox). This page only relays the OAuth code to the local sandbox demo and never stores it.</p>
+</div>
+
+<script>
+(function(){
+  var p = new URLSearchParams(window.location.search);
+  var code = p.get("code");
+  var state = p.get("state");
+  var scopes = p.get("scopes") || p.get("scope");
+  var error = p.get("error");
+  var errDesc = p.get("error_description");
+  var localBase = "https://localhost:8443/auth/tiktok/callback";
+
+  if (error) {
+    document.getElementById("status").style.display = "none";
+    document.getElementById("err").style.display = "block";
+    document.getElementById("err-code").textContent = error;
+    document.getElementById("err-desc").textContent = errDesc || "";
+    return;
+  }
+
+  if (!code || !state) {
+    document.getElementById("status").innerHTML = '<span class="err">Missing <code>code</code> or <code>state</code> in callback URL.</span>';
+    return;
+  }
+
+  document.getElementById("status").style.display = "none";
+  document.getElementById("ok").style.display = "block";
+  document.getElementById("code").textContent = code;
+  document.getElementById("state").textContent = state;
+  if (scopes) {
+    document.getElementById("scopes-row").style.display = "block";
+    document.getElementById("scopes").textContent = scopes;
+  }
+
+  var forwardUrl = localBase + "?" + p.toString();
+  document.getElementById("forward").href = forwardUrl;
+
+  var copyBtn = document.querySelector('[data-copy="code"]');
+  if (copyBtn) copyBtn.addEventListener("click", function(){
+    navigator.clipboard.writeText(code).then(function(){ copyBtn.textContent = "copied"; });
+  });
+
+  setTimeout(function(){ window.location.href = forwardUrl; }, 600);
+})();
+</script>
+</body>
+</html>
